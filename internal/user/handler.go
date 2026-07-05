@@ -37,3 +37,21 @@ func (h *Handler) Register(c *gin.Context) {
 	c.JSON(http.StatusCreated, out)
 
 }
+
+func (h *Handler) Login(c *gin.Context) {
+	var input LoginInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errors": "Invalid credentials",
+		})
+		return
+	}
+	out, err := h.svc.Login(c.Request.Context(), input)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, out)
+}

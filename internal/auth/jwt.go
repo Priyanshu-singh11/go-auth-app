@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -30,4 +31,27 @@ func Cretetoken(jwtSecret string, userID string, role string) (string, error) {
 		return "", fmt.Errorf("sign token failed %w", err)
 	}
 	return signed, nil
+}
+
+func ParseToken(jwtSecret string, tokenString string) (Claims, error) {
+	var claims Claims
+	parsed, err := jwt.ParseWithClaims(tokenString, &claims,
+		func(t *jwt.Token) (interface{}, error) {
+			if t.Method.Alg() != jwt.SigningMethodHS256.Alg() {
+				return nil, fmt.Errorf("unexpected signing method : %v", t.Header["alg"])
+			}
+			return []byte(jwtSecret), nil
+		},
+		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}),
+	)
+	if err != nil {
+		return Claims{}, fmt.Errorf("parse filed token %w", err)
+	}
+	if !parsed.Valid {
+		return Claims{}, errors.New("Invalid token")
+	}
+	if claims.Subject == "" {
+		return Claims{}, errors.New(" token miaaing subject")
+	}
+	return claims, nil
 }
